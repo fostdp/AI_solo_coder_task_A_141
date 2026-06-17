@@ -139,6 +139,25 @@ bool ClickHouseClient::insertSensorData(const SensorData& data) {
     }
 }
 
+bool ClickHouseClient::insertSimulationResultRow(const SimulationResultRow& row) {
+    try {
+        clickhouse::Block block;
+        block.AddColumn(std::make_shared<clickhouse::ColumnDateTime>(std::vector<time_t>{
+            std::chrono::system_clock::to_time_t(row.timestamp)}));
+        block.AddColumn(std::make_shared<clickhouse::ColumnUInt8>(std::vector<uint8_t>{row.triggered ? 1 : 0}));
+        block.AddColumn(std::make_shared<clickhouse::ColumnInt32>(std::vector<int32_t>{row.dragon_index}));
+        block.AddColumn(std::make_shared<clickhouse::ColumnString>(std::vector<std::string>{row.direction}));
+        block.AddColumn(std::make_shared<clickhouse::ColumnFloat64>(std::vector<double>{row.max_angle}));
+        block.AddColumn(std::make_shared<clickhouse::ColumnFloat64>(std::vector<double>{row.peak_acceleration}));
+        block.AddColumn(std::make_shared<clickhouse::ColumnFloat64>(std::vector<double>{row.magnitude}));
+        block.AddColumn(std::make_shared<clickhouse::ColumnFloat64>(std::vector<double>{row.distance}));
+        impl_->client->Insert("didongyi.simulation_results", block);
+        return true;
+    } catch (const std::exception&) {
+        return false;
+    }
+}
+
 std::vector<SensorDataRow> ClickHouseClient::queryRealtimeData(const std::string& deviceId, int limit) {
     std::vector<SensorDataRow> results;
     try {

@@ -1,0 +1,36 @@
+{
+  "pillar": {
+    "mass_kg": 500,
+    "height_m": 2.0,
+    "damping_ratio": 0.05,
+    "limit_angle_deg": 8.0,
+    "trigger_angle_deg": 5.0
+  },
+  "contact": {
+    "penalty_stiffness": 5000000,
+    "penalty_damping": 1200,
+    "friction_coeff": 0.15
+  },
+  "numerical": {
+    "dt_sec": 0.001,
+    "duration_sec": 30.0,
+    "sample_interval": 30
+  },
+  "site_soil": {
+    "default_type": "II",
+    "amplification": {
+      "I0": 0.85,
+      "I1": 1.00,
+      "II": 1.25,
+      "III": 1.65,
+      "IV": 2.10
+    },
+    "frequency_tuning": {
+      "I0": 1.4,
+      "I1": 1.2,
+      "II": 1.0,
+      "III": 0.7,
+      "IV": 0.45
+    }
+  }
+}

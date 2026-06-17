@@ -1,0 +1,44 @@
+{
+  "waveform": {
+    "base_frequency_hz": 1.0,
+    "decay_alpha": 0.5,
+    "min_magnitude": 1.0,
+    "max_magnitude": 9.0
+  },
+  "propagation": {
+    "min_distance_km": 1.0,
+    "max_distance_km": 1000.0,
+    "amplitude_scaling": "sqrt_inverse"
+  },
+  "sensitivity": {
+    "magnitude_steps": 20,
+    "distance_steps": 20,
+    "monte_carlo_trials": 30,
+    "noise_stddev": 0.01
+  },
+  "alert": {
+    "misfire_accel_threshold": 0.5,
+    "sensitivity_drop_threshold": 0.6,
+    "detection_window_size": 50,
+    "min_window_samples": 10,
+    "mqtt_topic": "didongyi/alerts",
+    "mqtt_qos": 0
+  },
+  "udp_receiver": {
+    "listen_host": "0.0.0.0",
+    "listen_port": 5005,
+    "max_packet_size": 1024,
+    "validation": {
+      "max_acceleration": 10.0,
+      "max_magnitude": 9.5,
+      "valid_device_prefix": "DDY-",
+      "max_distance_km": 2000
+    }
+  },
+  "queues": {
+    "sensor_to_simulator_capacity": 1024,
+    "simulator_to_alarm_capacity": 512,
+    "simulator_to_clickhouse_capacity": 512,
+    "alarm_to_clickhouse_capacity": 256
+  }
+}

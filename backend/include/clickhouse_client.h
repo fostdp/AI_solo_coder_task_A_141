@@ -48,6 +48,7 @@ public:
     bool isConnected() const;
 
     bool insertSensorData(const SensorData& data);
+    bool insertSimulationResultRow(const SimulationResultRow& row);
     std::vector<SensorDataRow> queryRealtimeData(const std::string& deviceId, int limit = 100);
     bool insertSimulationResult(const SimulationResult& result, const SimulationParameters& params);
     bool insertAlert(const Alert& alert);
