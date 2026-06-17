@@ -238,6 +238,81 @@ export default function DidongyiModel({
   const shakeSeed = useRef(0)
   const [resetDragonIds, setResetDragonIds] = useState<Set<number>>(new Set())
 
+  const targetBuffer = useRef<Array<{ t: number; x: number; y: number }>>([])
+  const lastTargetX = useRef(0)
+  const lastTargetY = useRef(0)
+  const lastPushTime = useRef(0)
+  const startTime = useRef<number | null>(null)
+  const renderClock = useRef(0)
+
+  const catmullRom = (p0: number, p1: number, p2: number, p3: number, t: number) => {
+    const t2 = t * t
+    const t3 = t2 * t
+    return 0.5 * (
+      (2 * p1) +
+      (-p0 + p2) * t +
+      (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
+      (-p0 + 3 * p1 - 3 * p2 + p3) * t3
+    )
+  }
+
+  const pushTargetSample = (x: number, y: number, now: number) => {
+    if (startTime.current === null) {
+      startTime.current = now
+    }
+    const t = (now - startTime.current) / 1000
+
+    if (targetBuffer.current.length > 0 && t - lastPushTime.current < 0.016) {
+      const last = targetBuffer.current[targetBuffer.current.length - 1]
+      last.x = x
+      last.y = y
+      return
+    }
+
+    targetBuffer.current.push({ t, x, y })
+    lastPushTime.current = t
+
+    while (targetBuffer.current.length > 32) {
+      targetBuffer.current.shift()
+    }
+  }
+
+  const interpolateTarget = (queryT: number) => {
+    const buf = targetBuffer.current
+    if (buf.length < 2) {
+      return { x: buf[0]?.x ?? 0, y: buf[0]?.y ?? 0 }
+    }
+    if (queryT <= buf[0].t) {
+      return { x: buf[0].x, y: buf[0].y }
+    }
+    if (queryT >= buf[buf.length - 1].t) {
+      return { x: buf[buf.length - 1].x, y: buf[buf.length - 1].y }
+    }
+
+    let idx = 0
+    for (let i = 0; i < buf.length - 1; i++) {
+      if (queryT >= buf[i].t && queryT <= buf[i + 1].t) {
+        idx = i
+        break
+      }
+    }
+
+    const i0 = Math.max(0, idx - 1)
+    const i1 = idx
+    const i2 = Math.min(buf.length - 1, idx + 1)
+    const i3 = Math.min(buf.length - 1, idx + 2)
+
+    const t0 = buf[i1].t
+    const t1 = buf[i2].t
+    const span = t1 - t0 || 1
+    const localT = (queryT - t0) / span
+
+    return {
+      x: catmullRom(buf[i0].x, buf[i1].x, buf[i2].x, buf[i3].x, localT),
+      y: catmullRom(buf[i0].y, buf[i1].y, buf[i2].y, buf[i3].y, localT),
+    }
+  }
+
   const triggeredCount = dragons.filter(d => d.triggered).length
 
   useFrame((state, delta) => {
@@ -254,13 +329,28 @@ export default function DidongyiModel({
       groupRef.current.position.z = shakeZ
     }
 
-    const targetX = pillarState.displacement_x
-    const targetZ = pillarState.displacement_y
-    const springK = 12
-    const damping = 2.5
+    const now = performance.now()
+    const tx = pillarState.displacement_x
+    const ty = pillarState.displacement_y
+    if (tx !== lastTargetX.current || ty !== lastTargetY.current) {
+      pushTargetSample(tx, ty, now)
+      lastTargetX.current = tx
+      lastTargetY.current = ty
+    }
 
-    wobbleRef.current.vx += (targetX - wobbleRef.current.x) * springK * delta
-    wobbleRef.current.vz += (targetZ - wobbleRef.current.z) * springK * delta
+    renderClock.current += delta
+    const smoothDelay = 0.08
+    const queryT = (startTime.current !== null)
+      ? (now - startTime.current) / 1000 - smoothDelay
+      : 0
+
+    const smoothTarget = interpolateTarget(Math.max(0, queryT))
+
+    const springK = 18
+    const damping = 3.2
+
+    wobbleRef.current.vx += (smoothTarget.x - wobbleRef.current.x) * springK * delta
+    wobbleRef.current.vz += (smoothTarget.y - wobbleRef.current.z) * springK * delta
     wobbleRef.current.vx *= Math.exp(-damping * delta)
     wobbleRef.current.vz *= Math.exp(-damping * delta)
     wobbleRef.current.x += wobbleRef.current.vx * delta

@@ -23,6 +23,7 @@ double SensitivityAnalyzer::computeDetectionProbability(double magnitude, double
         sim_params.duration = params.duration;
         sim_params.dt = params.dt;
         sim_params.trigger_angle_threshold = 5.0;
+        sim_params.site_soil = params.site_soil;
 
         SimulationEngine engine;
         SimulationResult result = engine.runSimulation(sim_params);
@@ -54,6 +55,7 @@ double SensitivityAnalyzer::computeFalseAlarmRate(double magnitude, double dista
         sim_params.duration = params.duration;
         sim_params.dt = params.dt;
         sim_params.trigger_angle_threshold = 5.0;
+        sim_params.site_soil = params.site_soil;
 
         double noise_ax = noise_dist(rng) * 0.01;
         double noise_ay = noise_dist(rng) * 0.01;

@@ -1,3 +1,13 @@
+export type SiteSoilType = "I0" | "I1" | "II" | "III" | "IV"
+
+export const SITE_SOIL_OPTIONS: Array<{ value: SiteSoilType; label: string; amplification: number; description: string }> = [
+  { value: "I0", label: "I₀ 类岩石", amplification: 0.85, description: "坚硬岩石，放大系数 0.85" },
+  { value: "I1", label: "I₁ 类坚硬土", amplification: 1.0, description: "坚硬土/岩石，放大系数 1.00" },
+  { value: "II", label: "II 类中硬土", amplification: 1.25, description: "中硬场地土，放大系数 1.25" },
+  { value: "III", label: "III 类中软土", amplification: 1.65, description: "中软场地土，放大系数 1.65" },
+  { value: "IV", label: "IV 类软弱土", amplification: 2.1, description: "软弱场地土，放大系数 2.10" },
+]
+
 export interface DragonStatus {
   id: number;
   direction: string;
@@ -53,6 +63,10 @@ export interface SimulationParams {
   duration: number;
   earthquake_direction?: number;
   sample_rate?: number;
+  site_soil?: SiteSoilType;
+  limit_angle?: number;
+  penalty_stiffness?: number;
+  friction_coeff?: number;
 }
 
 export interface TrajectoryPoint {

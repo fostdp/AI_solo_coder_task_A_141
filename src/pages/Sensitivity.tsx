@@ -1,13 +1,15 @@
 import { useState, useMemo } from "react";
-import { Eye, Sliders, Target, TrendingDown, CircleGauge } from "lucide-react";
+import { Eye, Sliders, Target, TrendingDown, CircleGauge, Layers } from "lucide-react";
 import HeatmapCanvas from "@/components/Visuals/HeatmapCanvas";
-import type { HeatmapCell, ROCPoint } from "@/types";
+import type { HeatmapCell, ROCPoint, SiteSoilType } from "@/types";
+import { SITE_SOIL_OPTIONS } from "@/types";
 import { cn } from "@/lib/utils";
 
 export default function Sensitivity() {
   const [threshold, setThreshold] = useState(5);
   const [damping, setDamping] = useState(0.85);
   const [pillarMass, setPillarMass] = useState(200);
+  const [siteSoil, setSiteSoil] = useState<SiteSoilType>("II");
   const [hoverCell, setHoverCell] = useState<HeatmapCell | null>(null);
   const [running, setRunning] = useState(false);
 
@@ -17,6 +19,8 @@ export default function Sensitivity() {
   const maxMag = 8;
   const minDist = 10;
   const maxDist = 1000;
+
+  const soilAmp = SITE_SOIL_OPTIONS.find(s => s.value === siteSoil)?.amplification ?? 1.0
 
   const grid = useMemo<HeatmapCell[][]>(() => {
     const result: HeatmapCell[][] = [];
@@ -28,8 +32,8 @@ export default function Sensitivity() {
         const magFactor = Math.max(0, Math.min(1, (mag - 2.5) / 4));
         const distFactor = Math.exp(-Math.pow(dist / threshold, 2) * 0.0015);
         const massFactor = Math.pow(200 / pillarMass, 0.3);
-        let base = magFactor * distFactor * massFactor;
-        base = Math.pow(base, 1 / damping);
+        let base = magFactor * distFactor * massFactor * soilAmp;
+        base = Math.min(1, Math.pow(base, 1 / damping));
         const noise = (Math.sin(r * 1.7 + c * 2.3) * 0.5 + 0.5) * 0.06;
         const value = Math.max(0, Math.min(1, base * 0.95 + noise - 0.02));
         const far = Math.sin(r * 0.9 + c * 0.6) * 0.04;
@@ -49,7 +53,7 @@ export default function Sensitivity() {
       result.push(row);
     }
     return result;
-  }, [threshold, damping, pillarMass]);
+  }, [threshold, damping, pillarMass, soilAmp]);
 
   const rocCurve = useMemo<ROCPoint[]>(() => {
     const pts: ROCPoint[] = [];
@@ -117,7 +121,7 @@ export default function Sensitivity() {
           <span>灵敏度分析参数</span>
           <span className="text-bronze-500 text-sm ml-auto">检测范围 / 误报率评估</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {[
             { label: "触发阈值 (°)", val: threshold, min: 1, max: 15, step: 0.5, onChange: setThreshold },
             { label: "阻尼比", val: damping, min: 0.3, max: 1.2, step: 0.05, onChange: setDamping },
@@ -140,6 +144,25 @@ export default function Sensitivity() {
               />
             </div>
           ))}
+          <div>
+            <div className="flex justify-between items-baseline mb-1.5">
+              <label className="form-label mb-0 flex items-center gap-1.5">
+                <Layers className="w-3 h-3" />
+                场地土类型
+              </label>
+              <span className="text-xs text-gold-400 font-mono tabular-nums">×{soilAmp.toFixed(2)}</span>
+            </div>
+            <select
+              value={siteSoil}
+              onChange={(e) => setSiteSoil(e.target.value as SiteSoilType)}
+              disabled={running}
+              className="w-full h-9 rounded-md border border-bronze-700/40 bg-ink-950/60 px-3 text-sm text-bronze-100 focus:border-gold-500/60 focus:outline-none"
+            >
+              {SITE_SOIL_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-end">
             <button
               onClick={() => { setRunning(true); setTimeout(() => setRunning(false), 800); }}

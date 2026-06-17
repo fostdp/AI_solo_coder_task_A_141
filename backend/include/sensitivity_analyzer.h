@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include "simulation_engine.h"
 
 struct SensitivityParameters {
     double magnitude_min = 1.0;
@@ -18,6 +19,7 @@ struct SensitivityParameters {
     double decay_alpha = 0.5;
     double duration = 30.0;
     double dt = 0.001;
+    SiteSoilType site_soil = SiteSoilType::II;
 };
 
 struct HeatmapCell {
