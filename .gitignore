@@ -1,0 +1,59 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# --- Auto-added by uploader ---
+# --- Node.js ---
+.npm
+# --- Java / Maven ---
+target
+*.class
+*.jar
+*.war
+.mvn/wrapper/maven-wrapper.jar
+# --- Python ---
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+env
+.tox
+.pytest_cache
+# --- IDE / Editor ---
+.vscode
+*.swp
+*.swo
+Thumbs.db
+# --- Project local ---
+.trae
+build
+.cache
+.output
+.nuxt
+.next
+coverage
+# --- Env ---
+.env
+.env.local
+.env.*.local
