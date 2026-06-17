@@ -1,0 +1,164 @@
+version: "3.9"
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    container_name: didongyi-clickhouse
+    hostname: clickhouse
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: didongyi
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./scripts/init_clickhouse.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - didongyi-net
+
+  mqtt-broker:
+    image: eclipse-mosquitto:2.0.18
+    container_name: didongyi-mqtt
+    hostname: mqtt-broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./deploy/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt_data:/mosquitto/data
+      - mqtt_log:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -t '$$SYS/#' -C 1 -W 3 > /dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - didongyi-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: didongyi-backend
+    hostname: backend
+    restart: unless-stopped
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      mqtt-broker:
+        condition: service_healthy
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 9000
+      MQTT_HOST: mqtt-broker
+      MQTT_PORT: 1883
+      LOG_LEVEL: info
+      PROMETHEUS_BIND: 0.0.0.0:9090
+    ports:
+      - "8080:8080"
+      - "5005:5005/udp"
+      - "9090:9090"
+    volumes:
+      - ./backend/config:/app/config:ro
+    networks:
+      - didongyi-net
+
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.simulator
+    container_name: didongyi-simulator
+    hostname: simulator
+    restart: unless-stopped
+    depends_on:
+      - backend
+    command:
+      - "--udp-host=backend"
+      - "--udp-port=5005"
+      - "--interval=1"
+      - "--event-probability=0.1"
+      - "--site-soil=II"
+    profiles:
+      - simulator
+    networks:
+      - didongyi-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: didongyi-frontend
+    hostname: frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - didongyi-net
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: didongyi-prometheus
+    hostname: prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    profiles:
+      - monitoring
+    networks:
+      - didongyi-net
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: didongyi-grafana
+    hostname: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: "vertamedia-clickhouse-datasource"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    profiles:
+      - monitoring
+    networks:
+      - didongyi-net
+
+volumes:
+  clickhouse_data:
+  mqtt_data:
+  mqtt_log:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  didongyi-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

@@ -1,0 +1,78 @@
+FROM ubuntu:22.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    ca-certificates \
+    libboost-system-dev \
+    libboost-thread-dev \
+    libmosquitto-dev \
+    libssl-dev \
+    zlib1g-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /deps
+
+RUN wget -q https://github.com/gabime/spdlog/archive/refs/tags/v1.12.0.tar.gz -O spdlog.tar.gz \
+    && tar xzf spdlog.tar.gz && cd spdlog-1.12.0 \
+    && mkdir build && cd build \
+    && cmake .. -DSPDLOG_BUILD_SHARED=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+    && make -j$(nproc) install && cd /deps && rm -rf spdlog*
+
+RUN wget -q https://github.com/jupp0r/prometheus-cpp/archive/refs/tags/v1.2.4.tar.gz -O prometheus.tar.gz \
+    && tar xzf prometheus.tar.gz && cd prometheus-cpp-1.2.4 \
+    && mkdir build && cd build \
+    && cmake .. -DBUILD_SHARED_LIBS=OFF -DENABLE_PUSH=OFF -DENABLE_COMPRESSION=OFF \
+       -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+    && make -j$(nproc) install && cd /deps && rm -rf prometheus*
+
+RUN wget -q https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.15.3.tar.gz -O httplib.tar.gz \
+    && tar xzf httplib.tar.gz && cp cpp-httplib-0.15.3/httplib.h /usr/local/include/ && rm -rf httplib*
+
+RUN wget -q https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz -O json.tar.gz \
+    && tar xzf json.tar.gz && cp nlohmann-json-3.11.3/single_include/nlohmann/json.hpp /usr/local/include/nlohmann/ \
+    && rm -rf json* nlohmann-json*
+
+RUN wget -q https://github.com/ClickHouse/clickhouse-cpp/archive/refs/tags/v2.5.1.tar.gz -O ch.tar.gz \
+    && tar xzf ch.tar.gz && cd clickhouse-cpp-2.5.1 \
+    && mkdir build && cd build \
+    && cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+    && make -j$(nproc) install && cd /deps && rm -rf ch.tar.gz clickhouse-cpp*
+
+WORKDIR /src
+
+COPY backend/ ./
+
+RUN mkdir -p build && cd build \
+    && cmake .. \
+       -DCMAKE_BUILD_TYPE=Release \
+       -DHTTPP_LIB_INCLUDE=/usr/local/include \
+       -DNLOHMANN_JSON_INCLUDE=/usr/local/include \
+       -DCLICKHOUSE_CPP_INCLUDE=/usr/local/include \
+       -DCLICKHOUSE_CPP_LIB=/usr/local/lib/libclickhouse-cpp.a \
+       -DCMAKE_CXX_FLAGS="-I/usr/local/include" \
+    && make -j$(nproc)
+
+FROM ubuntu:22.04 AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libboost-system1.74.0 \
+    libboost-thread1.74.0 \
+    libmosquitto1 \
+    ca-certificates \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /src/build/didongyi_backend /app/
+COPY --from=builder /src/config /app/config/
+
+EXPOSE 8080 5005/udp 9090
+
+CMD ["./didongyi_backend"]

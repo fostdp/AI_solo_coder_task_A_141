@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: "didongyi"
+
+scrape_configs:
+  - job_name: "didongyi-backend"
+    static_configs:
+      - targets: ["backend:9090"]
+    scrape_interval: 5s
+    metrics_path: "/metrics"
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
