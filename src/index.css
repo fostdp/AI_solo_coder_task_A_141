@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background-color: #050614;
+    color: #e5e7eb;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+    letter-spacing: 0.02em;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(10, 14, 39, 0.6);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #B87333, #87481f);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #D4AF37, #B87333);
+  }
+}
+
+@layer components {
+  .bronze-panel {
+    @apply bg-ink-900/80 backdrop-blur-sm rounded-lg border border-bronze-700/40
+           shadow-bronze relative overflow-hidden;
+    background-image:
+      linear-gradient(135deg, rgba(184,115,51,0.05) 0%, transparent 40%),
+      linear-gradient(315deg, rgba(212,175,55,0.04) 0%, transparent 40%);
+  }
+  .bronze-panel::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at top left, rgba(212,175,55,0.08), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(184,115,51,0.08), transparent 50%);
+    pointer-events: none;
+  }
+  .bronze-btn {
+    @apply relative inline-flex items-center justify-center gap-2 px-5 py-2.5
+           rounded-md border border-bronze-500/60 text-bronze-100
+           bg-gradient-to-b from-bronze-700/50 to-bronze-800/60
+           hover:from-bronze-600/60 hover:to-bronze-700/70
+           hover:border-gold-500/60 hover:text-gold-400
+           transition-all duration-200 font-medium
+           shadow-[0_1px_0_rgba(212,175,55,0.2)_inset,0_0_0_1px_rgba(0,0,0,0.3)]
+           hover:shadow-gold active:translate-y-[1px];
+  }
+  .bronze-btn-primary {
+    @apply relative inline-flex items-center justify-center gap-2 px-6 py-2.5
+           rounded-md text-ink-950 font-semibold
+           bg-gradient-to-b from-gold-400 to-gold-600
+           hover:from-gold-500 hover:to-gold-700
+           transition-all duration-200
+           shadow-gold active:translate-y-[1px];
+  }
+  .card-heading {
+    @apply text-gold-500 text-base md:text-lg font-semibold font-serif
+           flex items-center gap-2 mb-3 border-b border-bronze-700/30 pb-2;
+  }
+  .value-card {
+    @apply bronze-panel p-4;
+  }
+  .value-label {
+    @apply text-xs uppercase tracking-widest text-bronze-300/80 mb-1;
+  }
+  .value-number {
+    @apply text-2xl font-serif font-bold text-gold-400 tabular-nums;
+  }
+  .form-label {
+    @apply block text-xs font-medium text-bronze-200 mb-1.5 tracking-wide;
+  }
+  .form-input {
+    @apply w-full bg-ink-900/80 border border-bronze-700/40 rounded-md px-3 py-2
+           text-sm text-gold-100 outline-none
+           focus:border-gold-500/60 focus:ring-1 focus:ring-gold-500/30
+           placeholder:text-bronze-600/60 transition-all;
+  }
+  .status-dot {
+    @apply inline-block w-2 h-2 rounded-full;
+  }
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-md text-sm
+           text-bronze-200 hover:bg-bronze-700/20 hover:text-gold-400
+           transition-colors relative;
+  }
+  .nav-link.active {
+    @apply bg-bronze-700/30 text-gold-400;
+    background-image: linear-gradient(90deg, rgba(212,175,55,0.12), transparent);
+  }
+  .nav-link.active::before {
+    content: "";
+    @apply absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-gradient-to-b from-gold-400 to-bronze-500;
+  }
+}
+
+@layer utilities {
+  .text-shadow-glow {
+    text-shadow: 0 0 10px rgba(212,175,55,0.4);
+  }
+  .bg-starfield {
+    background-color: #050614;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(212,175,55,0.6), transparent),
+      radial-gradient(1px 1px at 60% 70%, rgba(184,115,51,0.5), transparent),
+      radial-gradient(1.5px 1.5px at 80% 20%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 10% 60%, rgba(212,175,55,0.4), transparent),
+      radial-gradient(2px 2px at 90% 90%, rgba(184,115,51,0.3), transparent);
+    background-size: 800px 800px;
+  }
+  .clip-ornament-top {
+    clip-path: polygon(0 12px, 12px 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  }
+  .pattern-sieve {
+    background-image:
+      repeating-linear-gradient(45deg, rgba(184,115,51,0.05) 0 2px, transparent 2px 8px),
+      repeating-linear-gradient(-45deg, rgba(212,175,55,0.04) 0 2px, transparent 2px 8px);
+  }
+}
